@@ -31,23 +31,27 @@ class Match(Base):
     series_type: Mapped[SeriesType] = mapped_column(SAEnum(SeriesType), default=SeriesType.bo3)
     status: Mapped[MatchStatus] = mapped_column(SAEnum(MatchStatus), default=MatchStatus.upcoming)
     scheduled_at: Mapped[datetime] = mapped_column(DateTime)
-    predictions_close_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)  # deadline
-    
-    # Rosters for first blood / MVP predictions
-    team1_players: Mapped[list | None] = mapped_column(JSON, nullable=True)  # ["Player1", "Player2", ...]
+    predictions_close_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # Rosters
+    team1_players: Mapped[list | None] = mapped_column(JSON, nullable=True)
     team2_players: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    
-    # Prediction options (admin sets these)
-    kills_options: Mapped[list | None] = mapped_column(JSON, nullable=True)  # ["<200", "200-250", ">250"]
+
+    # Prediction options
+    kills_options: Mapped[list | None] = mapped_column(JSON, nullable=True)
     duration_options: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
-    # Results (filled by admin after match)
+    # Overall results
     result_winner: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    result_score: Mapped[str | None] = mapped_column(String(16), nullable=True)  # "2-1"
+    result_score: Mapped[str | None] = mapped_column(String(16), nullable=True)
     result_kills_total: Mapped[str | None] = mapped_column(String(32), nullable=True)
     result_duration: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    result_first_blood: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    result_mvp: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    results_processed: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Per-map results: first blood and mvp for each map (stored as JSON list)
+    # e.g. result_first_blood = ["Kairi", "Sanz", "Hoshi"]  — индекс = номер карты - 1
+    # e.g. result_mvp         = ["Hoshi", "Kairi", null]
+    result_first_blood: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    result_mvp: Mapped[list | None] = mapped_column(JSON, nullable=True)
+
+    results_processed: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

@@ -8,7 +8,7 @@ const SERIES_COEFS = {
   bo5: { '3-0': 2.5, '0-3': 2.5, '3-1': 2.0, '1-3': 2.0, '3-2': 1.5, '2-3': 1.5 },
   bo7: { '4-0': 3.0, '0-4': 3.0, '4-1': 2.5, '1-4': 2.5, '4-2': 2.0, '2-4': 2.0, '4-3': 1.5, '3-4': 1.5 },
 }
-const SERIES_MAP_COUNT = { bo1: 1, bo3: 3, bo5: 5, bo7: 7 }
+const SERIES_MAP_COUNT = { bo1: 1, bo3: 2, bo5: 3, bo7: 4 } // минимум карт (2-0, 3-0, 4-0)
 
 function buildPredTypes(match) {
   if (!match) return []

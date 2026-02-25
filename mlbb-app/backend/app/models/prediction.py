@@ -41,9 +41,9 @@ FIXED_POINTS = {
 # How many maps per series type (max maps that can be played)
 SERIES_MAP_COUNT = {
     "bo1": 1,
-    "bo3": 3,
-    "bo5": 5,
-    "bo7": 7,
+    "bo3": 2,  # минимум карт (2-0)
+    "bo5": 3,  # минимум карт (3-0)
+    "bo7": 4,  # минимум карт (4-0)
 }
 
 # Series score coefficients

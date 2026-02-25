@@ -5,25 +5,41 @@ from app.db.base import init_db
 from app.api.v1.router import api_router
 from app.core.config import settings
 import logging
+import sys
+import os
 
 logger = logging.getLogger(__name__)
+
+# Bot application (initialized once)
+bot_app = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global bot_app
     await init_db()
-    # Setup bot webhook
+
+    # Initialize bot
     try:
-        import sys
-        sys.path.append("/app/bot")
-        from telegram import Bot
-        bot = Bot(token=settings.BOT_TOKEN)
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'bot'))
+        from bot import build_app
+        bot_app = build_app()
+        await bot_app.initialize()
+
         webhook_url = f"{settings.WEBHOOK_URL}/bot/webhook"
-        await bot.set_webhook(webhook_url)
+        await bot_app.bot.set_webhook(webhook_url)
         logger.info(f"Webhook set: {webhook_url}")
     except Exception as e:
-        logger.warning(f"Bot webhook setup failed: {e}")
+        logger.warning(f"Bot init failed: {e}")
+
     yield
+
+    # Shutdown bot
+    if bot_app:
+        try:
+            await bot_app.shutdown()
+        except Exception:
+            pass
 
 
 app = FastAPI(title="MLBB Predictions API", version="1.0.0", lifespan=lifespan)
@@ -32,7 +48,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -41,16 +57,18 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.post("/bot/webhook")
 async def bot_webhook(request: Request):
-    """Telegram webhook handler"""
+    """Telegram webhook — passes updates to bot application."""
+    global bot_app
+    if not bot_app:
+        return Response(status_code=200)
     try:
         from telegram import Update
-        from telegram.ext import Application
         data = await request.json()
-        # The bot application should be initialized once, here simplified
-        return Response(status_code=200)
+        update = Update.de_json(data, bot_app.bot)
+        await bot_app.process_update(update)
     except Exception as e:
         logger.error(f"Webhook error: {e}")
-        return Response(status_code=200)
+    return Response(status_code=200)
 
 
 @app.get("/health")

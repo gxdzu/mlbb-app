@@ -64,6 +64,23 @@ async def create_match(data: MatchCreate, db: AsyncSession = Depends(get_db)):
     db.add(m)
     await db.commit()
     await db.refresh(m)
+
+    # Send Telegram notification to all users
+    import asyncio
+    from app.core.config import settings
+    try:
+        from telegram import Bot
+        bot = Bot(token=settings.BOT_TOKEN)
+        from bot.bot import notify_match_created
+        asyncio.create_task(notify_match_created(bot, {
+            "team1_name": m.team1_name,
+            "team2_name": m.team2_name,
+            "series_type": m.series_type.value,
+        }))
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Notification failed: {e}")
+
     return m
 
 

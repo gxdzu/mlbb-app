@@ -123,6 +123,10 @@ async def delete_match(match_id: int, db: AsyncSession = Depends(get_db)):
     m = result.scalar_one_or_none()
     if not m:
         raise HTTPException(status_code=404, detail="Not found")
+    # Delete related predictions first to avoid FK constraint violation
+    from app.models.prediction import Prediction
+    from sqlalchemy import delete as sql_delete
+    await db.execute(sql_delete(Prediction).where(Prediction.match_id == match_id))
     await db.delete(m)
     await db.commit()
     return {"ok": True}

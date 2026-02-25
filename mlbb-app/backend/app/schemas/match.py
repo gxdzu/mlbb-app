@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List
 from app.models.match import MatchStatus, SeriesType
 
 
@@ -33,11 +33,12 @@ class MatchUpdate(BaseModel):
 
 class MatchResultSubmit(BaseModel):
     result_winner: str
-    result_score: str        # "2-1"
-    result_kills_total: str  # chosen option like "200-250"
-    result_duration: str
-    result_first_blood: str
-    result_mvp: str
+    result_score: str
+    result_kills_total: Optional[str] = None
+    result_duration: Optional[str] = None
+    # Per-map: list indexed by map number (index 0 = map 1)
+    result_first_blood: Optional[List[Optional[str]]] = None  # e.g. ["Kairi", "Sanz", "Hoshi"]
+    result_mvp: Optional[List[Optional[str]]] = None          # e.g. ["Hoshi", "Kairi", None]
 
 
 class MatchOut(BaseModel):
@@ -59,8 +60,8 @@ class MatchOut(BaseModel):
     result_score: Optional[str]
     result_kills_total: Optional[str]
     result_duration: Optional[str]
-    result_first_blood: Optional[str]
-    result_mvp: Optional[str]
+    result_first_blood: Optional[List[Optional[str]]]
+    result_mvp: Optional[List[Optional[str]]]
     results_processed: bool
     created_at: datetime
 

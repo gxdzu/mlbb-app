@@ -10,9 +10,10 @@ const SERIES_COEFS = {
 }
 const SERIES_MAP_COUNT = { bo1: 1, bo3: 2, bo5: 3, bo7: 4 }
 
-function parseUTC(dt) {
+function parseAsIs(dt) {
   if (!dt) return null
-  const s = dt.endsWith('Z') || dt.includes('+') ? dt : dt + 'Z'
+  // Strip timezone suffix — treat stored time as MSK display time
+  const s = dt.replace('Z', '').replace(/\+\d{2}:\d{2}$/, '')
   return new Date(s)
 }
 
@@ -200,7 +201,7 @@ export default function MatchDetailPage() {
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-[#f59e0b] border-t-transparent rounded-full animate-spin" /></div>
   if (!match) return <div className="p-4 text-center text-gray-400">Матч не найден</div>
 
-  const isPredOpen = match.status === 'upcoming' && (!match.predictions_close_at || new Date() < parseUTC(match.predictions_close_at))
+  const isPredOpen = match.status === 'upcoming' && (!match.predictions_close_at || new Date() < new Date(match.predictions_close_at))
   const predTypes = buildPredTypes(match)
   const coefs = SERIES_COEFS[match.series_type] || {}
   const mapCount = SERIES_MAP_COUNT[match.series_type] || 1
@@ -234,7 +235,7 @@ export default function MatchDetailPage() {
         </div>
         {match.scheduled_at && (
           <div className="text-center text-xs text-gray-500 mt-3">
-            {parseUTC(match.scheduled_at)?.toLocaleString('ru', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'Europe/Moscow' })} МСК
+            {parseAsIs(match.scheduled_at)?.toLocaleString('ru', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })} МСК
           </div>
         )}
       </div>

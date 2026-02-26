@@ -9,17 +9,13 @@ const STATUS_BADGE = {
   finished: { label: 'Завершён', color: 'bg-gray-800 text-gray-400 border-gray-700' },
 }
 
-function parseUTC(dt) {
-  if (!dt) return null
-  // Add Z only if no timezone info present
-  const s = dt.endsWith('Z') || dt.includes('+') ? dt : dt + 'Z'
-  return new Date(s)
-}
-
 function formatDate(dt) {
-  const d = parseUTC(dt)
-  if (!d || isNaN(d)) return '—'
-  return d.toLocaleString('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' })
+  if (!dt) return '—'
+  // Strip Z/timezone and parse as local — we store and display in MSK as-is
+  const s = dt.replace('Z', '').replace(/\+\d{2}:\d{2}$/, '')
+  const d = new Date(s)
+  if (isNaN(d)) return '—'
+  return d.toLocaleString('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
 export default function HomePage() {

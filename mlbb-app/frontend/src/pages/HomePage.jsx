@@ -10,7 +10,7 @@ const STATUS_BADGE = {
 }
 
 function formatDate(dt) {
-  return new Date(dt).toLocaleString('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  return new Date(dt + 'Z').toLocaleString('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' })
 }
 
 export default function HomePage() {
@@ -76,17 +76,24 @@ export default function HomePage() {
       {/* Selected tournament info */}
       {selected && (
         <div className="bg-[#111827] border border-[#1f2937] rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-xl font-bold">{selected.name}</h2>
-            <span className={`text-xs px-2 py-0.5 rounded-full border font-display ${STATUS_BADGE[selected.status]?.color}`}>
-              {STATUS_BADGE[selected.status]?.label}
-            </span>
+          <div className="flex items-center gap-3 mb-2">
+            {selected.logo_url && (
+              <img src={selected.logo_url} alt="" className="w-10 h-10 rounded-xl object-contain bg-[#0d1117] p-0.5 flex-shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="font-display text-xl font-bold truncate">{selected.name}</h2>
+                <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full border font-display ${STATUS_BADGE[selected.status]?.color}`}>
+                  {STATUS_BADGE[selected.status]?.label}
+                </span>
+              </div>
+              {selected.prize_pool && (
+                <p className="text-sm text-[#f59e0b] mt-0.5">Prize: {selected.prize_pool}</p>
+              )}
+            </div>
           </div>
-          {selected.prize_pool && (
-            <p className="text-sm text-[#f59e0b]">💰 Prize: {selected.prize_pool}</p>
-          )}
           {selected.description && (
-            <p className="text-sm text-gray-400 mt-1">{selected.description}</p>
+            <p className="text-sm text-gray-400">{selected.description}</p>
           )}
           {(selected.start_date || selected.end_date) && (
             <p className="text-xs text-gray-500 mt-2">

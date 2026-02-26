@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from app.models.match import MatchStatus, SeriesType
 
@@ -67,3 +67,6 @@ class MatchOut(BaseModel):
 
     class Config:
         from_attributes = True
+        json_encoders = {
+            datetime: lambda dt: dt.strftime('%Y-%m-%dT%H:%M:%S') + 'Z'
+        }

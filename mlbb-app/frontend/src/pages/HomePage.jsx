@@ -9,8 +9,17 @@ const STATUS_BADGE = {
   finished: { label: 'Завершён', color: 'bg-gray-800 text-gray-400 border-gray-700' },
 }
 
+function parseUTC(dt) {
+  if (!dt) return null
+  // Add Z only if no timezone info present
+  const s = dt.endsWith('Z') || dt.includes('+') ? dt : dt + 'Z'
+  return new Date(s)
+}
+
 function formatDate(dt) {
-  return new Date(dt + 'Z').toLocaleString('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' })
+  const d = parseUTC(dt)
+  if (!d || isNaN(d)) return '—'
+  return d.toLocaleString('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' })
 }
 
 export default function HomePage() {

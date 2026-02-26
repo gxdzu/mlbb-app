@@ -8,7 +8,7 @@ const SERIES_COEFS = {
   bo5: { '3-0': 2.5, '0-3': 2.5, '3-1': 2.0, '1-3': 2.0, '3-2': 1.5, '2-3': 1.5 },
   bo7: { '4-0': 3.0, '0-4': 3.0, '4-1': 2.5, '1-4': 2.5, '4-2': 2.0, '2-4': 2.0, '4-3': 1.5, '3-4': 1.5 },
 }
-const SERIES_MAP_COUNT = { bo1: 1, bo3: 2, bo5: 3, bo7: 4 } // минимум карт (2-0, 3-0, 4-0)
+const SERIES_MAP_COUNT = { bo1: 1, bo3: 2, bo5: 3, bo7: 4 }
 
 function buildPredTypes(match) {
   if (!match) return []
@@ -30,6 +30,69 @@ function buildPredTypes(match) {
   if (scoreOptions.length)
     types.push({ key: 'series_score', label: '📊 Счёт серии', dynamic: true, options: scoreOptions })
   return types
+}
+
+// Results section for finished match
+function MatchResults({ match }) {
+  const mapCount = SERIES_MAP_COUNT[match.series_type] || 1
+  const fbResults = match.result_first_blood || []
+  const mvpResults = match.result_mvp || []
+
+  return (
+    <div className="bg-[#111827] border border-[#1f2937] rounded-2xl overflow-hidden">
+      <div className="px-4 py-2 bg-green-900/20 border-b border-[#1f2937]">
+        <span className="font-display font-bold text-green-400 text-sm tracking-wider">РЕЗУЛЬТАТЫ МАТЧА</span>
+      </div>
+      <div className="p-4 space-y-3">
+        {/* Overall */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-400">Победитель</span>
+          <span className="font-display font-bold text-white">{match.result_winner || '—'}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-400">Счёт серии</span>
+          <span className="font-display font-bold text-[#f59e0b]">{match.result_score || '—'}</span>
+        </div>
+        {match.result_kills_total && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-400">Тотал киллов</span>
+            <span className="font-display font-bold text-white">{match.result_kills_total}</span>
+          </div>
+        )}
+        {match.result_duration && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-400">Длительность карты</span>
+            <span className="font-display font-bold text-white">{match.result_duration}</span>
+          </div>
+        )}
+
+        {/* Per-map */}
+        {(fbResults.length > 0 || mvpResults.length > 0) && (
+          <div className="border-t border-[#1f2937] pt-3 space-y-2">
+            <p className="text-xs text-gray-600 uppercase tracking-widest">По картам</p>
+            {Array.from({ length: mapCount }, (_, i) => i).map(i => {
+              const fb = fbResults[i]
+              const mvp = mvpResults[i]
+              if (!fb && !mvp) return null
+              return (
+                <div key={i} className="bg-[#0d1117] rounded-xl p-3 space-y-1.5">
+                  <p className="text-xs text-[#f59e0b] font-display font-bold">Карта {i + 1}</p>
+                  {fb && <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Первая кровь</span>
+                    <span className="text-white font-display">{fb}</span>
+                  </div>}
+                  {mvp && <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">MVP</span>
+                    <span className="text-white font-display">{mvp}</span>
+                  </div>}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function PredCard({ pt, isPredOpen, done, myPred, selected, wager, coefs, user, error, successState, onSelect, onWager, onSubmit, submitting }) {
@@ -140,11 +203,8 @@ export default function MatchDetailPage() {
     pt, isPredOpen,
     done: alreadyPredicted(pt.key),
     myPred: myPreds.find(p => p.pred_type === pt.key),
-    selected: selected[pt.key],
-    wager: wagers[pt.key],
-    coefs, user,
-    error: errors[pt.key],
-    successState: success[pt.key],
+    selected: selected[pt.key], wager: wagers[pt.key],
+    coefs, user, error: errors[pt.key], successState: success[pt.key],
     onSelect: val => setSelected(s => ({ ...s, [pt.key]: val })),
     onWager: val => setWagers(w => ({ ...w, [pt.key]: val })),
     onSubmit: () => submitPrediction(pt.key),
@@ -155,6 +215,7 @@ export default function MatchDetailPage() {
     <div className="p-4 space-y-4 pb-24">
       <button onClick={() => navigate(-1)} className="text-gray-400 text-sm flex items-center gap-1">← Назад</button>
 
+      {/* Match header */}
       <div className="bg-[#111827] border border-[#1f2937] rounded-2xl p-5">
         <div className="flex items-center justify-center gap-4">
           <div className="text-center flex-1"><div className="font-display text-xl font-bold">{match.team1_name}</div></div>
@@ -172,6 +233,7 @@ export default function MatchDetailPage() {
         )}
       </div>
 
+      {/* Status banners */}
       {!isPredOpen && match.status === 'upcoming' && (
         <div className="bg-yellow-900/20 border border-yellow-700 rounded-xl px-4 py-2 text-yellow-400 text-sm text-center">⏰ Приём прогнозов закрыт</div>
       )}
@@ -179,7 +241,12 @@ export default function MatchDetailPage() {
         <div className="bg-green-900/20 border border-green-700 rounded-xl px-4 py-2 text-green-400 text-sm text-center">✅ Матч завершён — прогнозы посчитаны</div>
       )}
 
-      {/* Static preds: kills, duration, winner, series_score */}
+      {/* Results block — shown when finished */}
+      {match.status === 'finished' && match.result_winner && (
+        <MatchResults match={match} />
+      )}
+
+      {/* Predictions */}
       <div className="space-y-3">
         {predTypes.filter(pt => !pt.mapNum).map(pt => (
           <div key={pt.key} className="bg-[#111827] border border-[#1f2937] rounded-2xl p-4">
@@ -188,7 +255,6 @@ export default function MatchDetailPage() {
         ))}
       </div>
 
-      {/* Per-map preds */}
       {predTypes.some(pt => pt.mapNum) && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">

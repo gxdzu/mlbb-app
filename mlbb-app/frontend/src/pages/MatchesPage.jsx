@@ -10,7 +10,11 @@ const TABS = [
 ]
 
 function formatDate(dt) {
-  return new Date(dt).toLocaleString('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  if (!dt) return '—'
+  const s = dt.replace('Z', '').replace(/\+.*$/, '')
+  const d = new Date(s)
+  if (isNaN(d)) return '—'
+  return d.toLocaleString('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
 export default function MatchesPage() {

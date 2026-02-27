@@ -18,6 +18,17 @@ function formatDate(dt) {
   return d.toLocaleString('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
+function sortMatchesHome(matches) {
+  const order = { upcoming: 0, live: 1, finished: 2, cancelled: 3 }
+  return [...matches].sort((a, b) => {
+    if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status]
+    // Within same status: upcoming — newest first (closest time first)
+    const da = new Date(a.scheduled_at.replace('Z','').replace(/\+.*$/,''))
+    const db = new Date(b.scheduled_at.replace('Z','').replace(/\+.*$/,''))
+    return da - db
+  })
+}
+
 export default function HomePage() {
   const { user } = useStore()
   const navigate = useNavigate()
@@ -36,7 +47,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (selected) {
-      matchesApi.getAll({ tournament_id: selected.id }).then(r => setMatches(r.data))
+      matchesApi.getAll({ tournament_id: selected.id }).then(r => setMatches(sortMatchesHome(r.data)))
     }
   }, [selected])
 

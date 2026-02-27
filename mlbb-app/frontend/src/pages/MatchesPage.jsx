@@ -17,6 +17,16 @@ function formatDate(dt) {
   return d.toLocaleString('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
+function sortMatches(matches) {
+  const order = { live: 0, upcoming: 1, finished: 2, cancelled: 3 }
+  return [...matches].sort((a, b) => {
+    if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status]
+    const da = new Date(a.scheduled_at.replace('Z','').replace(/\+.*$/,''))
+    const db = new Date(b.scheduled_at.replace('Z','').replace(/\+.*$/,''))
+    return da - db
+  })
+}
+
 export default function MatchesPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState(null)
@@ -28,7 +38,7 @@ export default function MatchesPage() {
     try {
       const params = status ? { status } : {}
       const { data } = await matchesApi.getAll(params)
-      setMatches(data)
+      setMatches(sortMatches(data))
     } finally {
       setLoading(false)
     }

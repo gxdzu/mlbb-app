@@ -187,7 +187,8 @@ export default function MatchDetailPage() {
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-[#f59e0b] border-t-transparent rounded-full animate-spin" /></div>
   if (!match) return <div className="p-4 text-center text-gray-400">Матч не найден</div>
 
-  const isPredOpen = match.status === 'upcoming' && (!match.predictions_close_at || new Date() < new Date(match.predictions_close_at))
+  const isTBD = match.team1_name?.toUpperCase() === 'TBD' || match.team2_name?.toUpperCase() === 'TBD'
+  const isPredOpen = !isTBD && match.status === 'upcoming' && (!match.predictions_close_at || new Date() < new Date(match.predictions_close_at))
   const predTypes = buildPredTypes(match)
   const coefs = SERIES_COEFS[match.series_type] || {}
   const mapCount = SERIES_MAP_COUNT[match.series_type] || 1
@@ -239,6 +240,12 @@ export default function MatchDetailPage() {
       )}
       {match.status === 'finished' && (
         <div className="bg-green-900/20 border border-green-700 rounded-xl px-4 py-2 text-green-400 text-sm text-center">✅ Матч завершён</div>
+      )}
+
+      {isTBD && match.status === 'upcoming' && (
+        <div className="bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-2 text-gray-400 text-sm text-center">
+          ⏳ Соперник ещё не определён — ставки откроются после обновления состава
+        </div>
       )}
 
       {/* Results */}

@@ -67,6 +67,21 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* News channel banner — subtle, dismissible */}
+      <a href="https://t.me/CKO_analytics" target="_blank" rel="noopener noreferrer"
+        className="flex items-center gap-3 bg-[#111827] border border-[#1f2937] rounded-xl px-4 py-2.5 no-underline active:scale-[0.98] transition-transform">
+        <div className="w-7 h-7 rounded-lg bg-[#0088cc]/20 border border-[#0088cc]/30 flex items-center justify-center flex-shrink-0">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#0088cc]">
+            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.026 9.547c-.144.647-.537.806-1.088.502l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.48 14.697l-2.95-.924c-.642-.2-.655-.642.135-.951l11.526-4.446c.535-.194 1.003.13.37.872z"/>
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-xs font-display font-bold text-white">НАШ ТГК</div>
+          <div className="text-xs text-gray-500 truncate">Новости и инсайды</div>
+        </div>
+        <div className="text-xs text-[#0088cc] flex-shrink-0">→</div>
+      </a>
+
       {/* Tournament selector */}
       {tournaments.length > 0 && (
         <div>
@@ -156,10 +171,12 @@ function MatchCard({ match, onClick }) {
     finished: <span className="text-xs text-gray-500">✓ {match.result_score || 'Завершён'}</span>,
   }
 
+  const isTBD = match.team1_name?.toUpperCase() === 'TBD' || match.team2_name?.toUpperCase() === 'TBD'
+
   return (
     <div
-      onClick={onClick}
-      className={`bg-[#111827] border border-[#1f2937] border-l-4 ${statusStyle[match.status]} rounded-2xl p-4 cursor-pointer active:scale-[0.98] transition-transform`}
+      onClick={!isTBD ? onClick : undefined}
+      className={`bg-[#111827] border border-[#1f2937] border-l-4 ${statusStyle[match.status]} rounded-2xl p-4 transition-transform ${!isTBD ? 'cursor-pointer active:scale-[0.98]' : 'opacity-60 cursor-default'}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex-1">
@@ -171,9 +188,15 @@ function MatchCard({ match, onClick }) {
           {statusLabel[match.status]}
           <div className="text-xs text-gray-500 block">{match.series_type.toUpperCase()}</div>
           {match.status === 'upcoming' && (
-            <div className="text-xs bg-[#f59e0b]/10 border border-[#f59e0b]/30 text-[#f59e0b] px-2 py-0.5 rounded-full">
-              Сделать ставку →
-            </div>
+            {isTBD ? (
+              <div className="text-xs bg-gray-800 border border-gray-700 text-gray-500 px-2 py-0.5 rounded-full">
+                Соперник TBD
+              </div>
+            ) : (
+              <div className="text-xs bg-[#f59e0b]/10 border border-[#f59e0b]/30 text-[#f59e0b] px-2 py-0.5 rounded-full">
+                Сделать ставку →
+              </div>
+            )}
           )}
         </div>
       </div>

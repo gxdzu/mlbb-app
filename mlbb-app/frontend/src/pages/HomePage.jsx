@@ -188,7 +188,7 @@ function MatchCard({ match, onClick }) {
           {statusLabel[match.status]}
           <div className="text-xs text-gray-500 block">{match.series_type.toUpperCase()}</div>
           {match.status === 'upcoming' && (
-            {isTBD ? (
+            isTBD ? (
               <div className="text-xs bg-gray-800 border border-gray-700 text-gray-500 px-2 py-0.5 rounded-full">
                 Соперник TBD
               </div>
@@ -196,7 +196,7 @@ function MatchCard({ match, onClick }) {
               <div className="text-xs bg-[#f59e0b]/10 border border-[#f59e0b]/30 text-[#f59e0b] px-2 py-0.5 rounded-full">
                 Сделать ставку →
               </div>
-            )}
+            )
           )}
         </div>
       </div>

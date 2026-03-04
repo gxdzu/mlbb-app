@@ -93,6 +93,23 @@ export default function ProfilePage() {
         ))}
       </div>
 
+      {/* Support */}
+      <a href="https://t.me/gxdzu_official" target="_blank" rel="noopener noreferrer"
+        className="flex items-center gap-3 bg-[#111827] border border-[#1f2937] rounded-2xl px-4 py-3 no-underline active:scale-[0.98] transition-transform">
+        <div className="w-8 h-8 rounded-xl bg-[#0088cc]/20 border border-[#0088cc]/30 flex items-center justify-center flex-shrink-0">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#0088cc]">
+            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.026 9.547c-.144.647-.537.806-1.088.502l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.48 14.697l-2.95-.924c-.642-.2-.655-.642.135-.951l11.526-4.446c.535-.194 1.003.13.37.872z"/>
+          </svg>
+        </div>
+        <div className="flex-1">
+          <div className="text-sm font-display font-bold text-white">Поддержка</div>
+          <div className="text-xs text-gray-500">@gxdzu_official</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-600">
+          <path d="M9 18L15 12L9 6" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </a>
+
       {/* Documents */}
       <div className="bg-[#111827] border border-[#1f2937] rounded-2xl divide-y divide-[#1f2937]">
         <p className="px-4 pt-3 pb-2 font-display font-bold text-xs uppercase tracking-widest text-gray-500">Документы</p>

@@ -68,7 +68,7 @@ export default function HomePage() {
       </div>
 
       {/* News channel banner — subtle, dismissible */}
-      <a href="https://t.me/LovelaceNews" target="_blank" rel="noopener noreferrer"
+      <a href="https://t.me/CKO_analytics" target="_blank" rel="noopener noreferrer"
         className="flex items-center gap-3 bg-[#111827] border border-[#1f2937] rounded-xl px-4 py-2.5 no-underline active:scale-[0.98] transition-transform">
         <div className="w-7 h-7 rounded-lg bg-[#0088cc]/20 border border-[#0088cc]/30 flex items-center justify-center flex-shrink-0">
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#0088cc]">
@@ -76,8 +76,8 @@ export default function HomePage() {
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-display font-bold text-white">LovelaceNews</div>
-          <div className="text-xs text-gray-500 truncate">Новости и анонсы турниров MLBB</div>
+          <div className="text-xs font-display font-bold text-white">НАШ ТГК</div>
+          <div className="text-xs text-gray-500 truncate">Новости и инсайды</div>
         </div>
         <div className="text-xs text-[#0088cc] flex-shrink-0">→</div>
       </a>

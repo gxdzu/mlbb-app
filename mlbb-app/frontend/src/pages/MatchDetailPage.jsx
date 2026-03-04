@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { matchesApi, predictionsApi } from '../api/client'
 import useStore from '../store/useStore'
@@ -38,6 +38,30 @@ function buildPredTypes(match) {
   return types
 }
 
+// Vote bar for winner prediction
+function VoteBar({ votes, total, team1, team2 }) {
+  if (!total || total === 0) return null
+  const pct1 = votes[team1] || 0
+  const pct2 = votes[team2] || 0
+  return (
+    <div className="mt-3 space-y-1">
+      <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <span>{pct1}%</span>
+        <span className="text-gray-600">{total} голосов</span>
+        <span>{pct2}%</span>
+      </div>
+      <div className="flex h-1.5 rounded-full overflow-hidden bg-[#1f2937]">
+        <div className="bg-blue-500 transition-all duration-500" style={{ width: `${pct1}%` }} />
+        <div className="bg-red-500 transition-all duration-500" style={{ width: `${pct2}%` }} />
+      </div>
+      <div className="flex justify-between text-xs">
+        <span className="text-blue-400 font-display font-bold truncate max-w-[40%]">{team1}</span>
+        <span className="text-red-400 font-display font-bold truncate max-w-[40%] text-right">{team2}</span>
+      </div>
+    </div>
+  )
+}
+
 function MatchResults({ match }) {
   const mapCount = SERIES_MAP_COUNT[match.series_type] || 1
   const fbResults = match.result_first_blood || []
@@ -73,8 +97,7 @@ function MatchResults({ match }) {
   )
 }
 
-// Single prediction option selector (no submit button)
-function PredSelector({ pt, done, myPred, selected, wager, coefs, user, onSelect, onWager, isPredOpen }) {
+function PredSelector({ pt, done, myPred, selected, wager, coefs, user, votes, onSelect, onWager, isPredOpen }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -120,6 +143,11 @@ function PredSelector({ pt, done, myPred, selected, wager, coefs, user, onSelect
           )}
         </>
       )}
+
+      {/* Vote bar only for winner prediction */}
+      {pt.key === 'winner' && votes && (
+        <VoteBar votes={votes.votes} total={votes.total} team1={pt.options[0]} team2={pt.options[1]} />
+      )}
     </div>
   )
 }
@@ -130,21 +158,27 @@ export default function MatchDetailPage() {
   const { user } = useStore()
   const [match, setMatch] = useState(null)
   const [myPreds, setMyPreds] = useState([])
+  const [votes, setVotes] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState({})
   const [wagers, setWagers] = useState({})
   const [submitting, setSubmitting] = useState(false)
-  const [submitResult, setSubmitResult] = useState(null) // { saved: N, errors: [] }
+  const [submitResult, setSubmitResult] = useState(null)
 
   useEffect(() => {
-    Promise.all([matchesApi.getOne(id), matchesApi.getMyPredictions(id)])
-      .then(([m, p]) => { setMatch(m.data); setMyPreds(p.data) })
-      .finally(() => setLoading(false))
+    Promise.all([
+      matchesApi.getOne(id),
+      matchesApi.getMyPredictions(id),
+      matchesApi.getVotes(id),
+    ]).then(([m, p, v]) => {
+      setMatch(m.data)
+      setMyPreds(p.data)
+      setVotes(v.data)
+    }).finally(() => setLoading(false))
   }, [id])
 
-  const alreadyPredicted = (type) => myPreds.some(p => p.pred_type === type)
+  const alreadyPredicted = useCallback((type) => myPreds.some(p => p.pred_type === type), [myPreds])
 
-  // Submit all selected predictions at once
   const submitAll = async () => {
     const predTypes = buildPredTypes(match)
     const toSubmit = predTypes.filter(pt => {
@@ -153,34 +187,54 @@ export default function MatchDetailPage() {
       if (pt.dynamic && !wagers[pt.key]) return false
       return true
     })
-
     if (toSubmit.length === 0) return
 
     setSubmitting(true)
     setSubmitResult(null)
+
+    // OPTIMISTIC UPDATE — instantly mark as done
+    const optimisticPreds = toSubmit.map(pt => ({
+      pred_type: pt.key,
+      pred_value: selected[pt.key],
+      is_settled: false,
+      _optimistic: true,
+    }))
+    setMyPreds(p => [...p, ...optimisticPreds])
+
     let saved = 0
     const errors = []
+    const failedTypes = []
 
     for (const pt of toSubmit) {
       try {
-        await predictionsApi.create({
+        const res = await predictionsApi.create({
           match_id: parseInt(id),
           pred_type: pt.key,
           pred_value: selected[pt.key],
           points_wagered: pt.dynamic ? parseInt(wagers[pt.key] || 0) : 0,
         })
-        setMyPreds(p => [...p, { pred_type: pt.key, pred_value: selected[pt.key], is_settled: false }])
         saved++
+        // Replace optimistic with real
+        setMyPreds(p => p.map(x =>
+          x._optimistic && x.pred_type === pt.key ? res.data : x
+        ))
+        // Update votes if winner prediction
+        if (pt.key === 'winner') {
+          matchesApi.getVotes(id).then(v => setVotes(v.data))
+        }
       } catch (e) {
+        failedTypes.push(pt.key)
         errors.push(`${pt.label}: ${e.response?.data?.detail || 'ошибка'}`)
+        // Rollback optimistic for this type
+        setMyPreds(p => p.filter(x => !(x._optimistic && x.pred_type === pt.key)))
       }
     }
 
     setSubmitting(false)
     setSubmitResult({ saved, errors })
-    // Clear selections for submitted ones
+    // Clear selections for successfully submitted
     const newSelected = { ...selected }
-    toSubmit.forEach(pt => { if (!errors.find(e => e.startsWith(pt.label))) delete newSelected[pt.key] })
+    toSubmit.filter(pt => !failedTypes.includes(pt.key)).forEach(pt => delete newSelected[pt.key])
     setSelected(newSelected)
   }
 
@@ -193,7 +247,6 @@ export default function MatchDetailPage() {
   const coefs = SERIES_COEFS[match.series_type] || {}
   const mapCount = SERIES_MAP_COUNT[match.series_type] || 1
 
-  // Count how many new predictions are selected and ready to submit
   const readyCount = predTypes.filter(pt => {
     if (alreadyPredicted(pt.key)) return false
     if (!selected[pt.key]) return false
@@ -202,7 +255,7 @@ export default function MatchDetailPage() {
   }).length
 
   const selProps = (pt) => ({
-    pt, isPredOpen,
+    pt, isPredOpen, votes: pt.key === 'winner' ? votes : null,
     done: alreadyPredicted(pt.key),
     myPred: myPreds.find(p => p.pred_type === pt.key),
     selected: selected[pt.key],
@@ -232,29 +285,29 @@ export default function MatchDetailPage() {
             {parseAsIs(match.scheduled_at)?.toLocaleString('ru', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })} МСК
           </div>
         )}
+        {/* Vote bar in header for quick overview */}
+        {votes && votes.total > 0 && (
+          <VoteBar votes={votes.votes} total={votes.total} team1={match.team1_name} team2={match.team2_name} />
+        )}
       </div>
 
-      {/* Banners */}
-      {!isPredOpen && match.status === 'upcoming' && (
+      {!isPredOpen && match.status === 'upcoming' && !isTBD && (
         <div className="bg-yellow-900/20 border border-yellow-700 rounded-xl px-4 py-2 text-yellow-400 text-sm text-center">⏰ Приём прогнозов закрыт</div>
       )}
       {match.status === 'finished' && (
         <div className="bg-green-900/20 border border-green-700 rounded-xl px-4 py-2 text-green-400 text-sm text-center">✅ Матч завершён</div>
       )}
-
       {isTBD && match.status === 'upcoming' && (
         <div className="bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-2 text-gray-400 text-sm text-center">
           ⏳ Соперник ещё не определён — ставки откроются после обновления состава
         </div>
       )}
 
-      {/* Results */}
       {match.status === 'finished' && match.result_winner && <MatchResults match={match} />}
 
-      {/* Submit result feedback */}
       {submitResult && (
         <div className={`rounded-xl px-4 py-3 text-sm ${submitResult.errors.length === 0 ? 'bg-green-900/20 border border-green-700 text-green-400' : 'bg-yellow-900/20 border border-yellow-700 text-yellow-400'}`}>
-          {submitResult.saved > 0 && <p>✓ Сохранено прогнозов: {submitResult.saved}</p>}
+          {submitResult.saved > 0 && <p>✓ Сохранено: {submitResult.saved}</p>}
           {submitResult.errors.map((e, i) => <p key={i}>⚠ {e}</p>)}
         </div>
       )}
@@ -291,7 +344,7 @@ export default function MatchDetailPage() {
         </div>
       )}
 
-      {/* Single submit button — fixed at bottom */}
+      {/* Fixed submit button */}
       {isPredOpen && (
         <div className="fixed bottom-16 left-0 right-0 max-w-md mx-auto px-4 z-40">
           <button

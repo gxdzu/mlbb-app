@@ -26,6 +26,7 @@ export const matchesApi = {
   getAll: (params) => api.get('/matches/', { params }),
   getOne: (id) => api.get(`/matches/${id}`),
   getMyPredictions: (matchId) => api.get(`/predictions/match/${matchId}/my`),
+  getVotes: (matchId) => api.get(`/predictions/match/${matchId}/votes`),
 }
 
 export const predictionsApi = {
@@ -38,4 +39,6 @@ export const usersApi = {
   getMe: () => api.get('/users/me'),
   getLeaderboard: () => api.get('/users/leaderboard'),
   getMyRank: () => api.get('/users/me/rank'),
+  getTournamentLeaderboard: (tournamentId) => api.get(`/users/leaderboard/tournament/${tournamentId}`),
+  getMyTournamentRank: (tournamentId) => api.get(`/users/me/rank/tournament/${tournamentId}`),
 }

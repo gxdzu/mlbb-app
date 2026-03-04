@@ -135,3 +135,22 @@ async def get_my_match_predictions(
         )
     )
     return result.scalars().all()
+
+
+@router.get("/match/{match_id}/votes")
+async def get_match_votes(match_id: int, db: AsyncSession = Depends(get_db)):
+    """Public endpoint — return winner vote percentages for a match."""
+    from sqlalchemy import func
+    result = await db.execute(
+        select(Prediction.pred_value, func.count(Prediction.id).label("cnt"))
+        .where(Prediction.match_id == match_id, Prediction.pred_type == PredictionType.winner)
+        .group_by(Prediction.pred_value)
+    )
+    rows = result.all()
+    total = sum(r.cnt for r in rows)
+    if total == 0:
+        return {"total": 0, "votes": {}}
+    return {
+        "total": total,
+        "votes": {r.pred_value: round(r.cnt / total * 100) for r in rows}
+    }

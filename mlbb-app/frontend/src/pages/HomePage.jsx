@@ -68,7 +68,7 @@ export default function HomePage() {
       </div>
 
       {/* News channel banner — subtle, dismissible */}
-      <a href="https://t.me/CKO_analytics" target="_blank" rel="noopener noreferrer"
+      <a href="https://t.me/LovelaceNews" target="_blank" rel="noopener noreferrer"
         className="flex items-center gap-3 bg-[#111827] border border-[#1f2937] rounded-xl px-4 py-2.5 no-underline active:scale-[0.98] transition-transform">
         <div className="w-7 h-7 rounded-lg bg-[#0088cc]/20 border border-[#0088cc]/30 flex items-center justify-center flex-shrink-0">
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#0088cc]">
@@ -76,8 +76,8 @@ export default function HomePage() {
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-display font-bold text-white">НАШ ТГК</div>
-          <div className="text-xs text-gray-500 truncate">Новости и инсайды</div>
+          <div className="text-xs font-display font-bold text-white">LovelaceNews</div>
+          <div className="text-xs text-gray-500 truncate">Новости и анонсы турниров MLBB</div>
         </div>
         <div className="text-xs text-[#0088cc] flex-shrink-0">→</div>
       </a>
@@ -159,6 +159,25 @@ export default function HomePage() {
   )
 }
 
+function VoteBar({ votes, total, team1, team2 }) {
+  if (!total || total === 0) return null
+  const p1 = votes[team1] || 0
+  const p2 = votes[team2] || 0
+  return (
+    <div className="mt-3 space-y-1">
+      <div className="flex h-1 rounded-full overflow-hidden bg-[#1f2937]">
+        <div className="bg-blue-500 transition-all duration-500" style={{ width: `${p1}%` }} />
+        <div className="bg-red-500 transition-all duration-500" style={{ width: `${p2}%` }} />
+      </div>
+      <div className="flex justify-between text-xs text-gray-600">
+        <span className="text-blue-400">{p1}%</span>
+        <span>{total} голосов</span>
+        <span className="text-red-400">{p2}%</span>
+      </div>
+    </div>
+  )
+}
+
 function MatchCard({ match, onClick }) {
   const statusStyle = {
     upcoming: 'border-l-blue-500',
@@ -172,6 +191,13 @@ function MatchCard({ match, onClick }) {
   }
 
   const isTBD = match.team1_name?.toUpperCase() === 'TBD' || match.team2_name?.toUpperCase() === 'TBD'
+  const [votes, setVotes] = React.useState(null)
+
+  React.useEffect(() => {
+    if (match.status === 'upcoming' || match.status === 'live') {
+      matchesApi.getVotes(match.id).then(r => setVotes(r.data)).catch(() => {})
+    }
+  }, [match.id])
 
   return (
     <div
@@ -200,6 +226,9 @@ function MatchCard({ match, onClick }) {
           )}
         </div>
       </div>
+      {votes && votes.total > 0 && (
+        <VoteBar votes={votes.votes} total={votes.total} team1={match.team1_name} team2={match.team2_name} />
+      )}
     </div>
   )
 }
